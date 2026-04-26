@@ -10,6 +10,14 @@ const {
 } = require("electron");
 
 const isDev = !app.isPackaged;
+
+if (isDev) {
+  // Keep dev runtime data separate from installed app data.
+  const devUserDataPath = path.join(app.getPath("appData"), "QuickBind-dev");
+  app.setPath("userData", devUserDataPath);
+  app.setPath("sessionData", path.join(devUserDataPath, "session"));
+}
+
 const ACTION_OPEN_APP = "openApp";
 const ACTION_COPY = "copy";
 const ACTION_PASTE = "paste";
@@ -20,23 +28,25 @@ let mainWindow = null;
 let isQuitting = false;
 let currentShortcuts = [];
 let mouseWatcherProcess = null;
-const hasSingleInstanceLock = app.requestSingleInstanceLock();
+const hasSingleInstanceLock = isDev ? true : app.requestSingleInstanceLock();
 const shortcutsFilePath = () =>
   path.join(app.getPath("userData"), "shortcuts.json");
 
-if (!hasSingleInstanceLock) {
+if (!isDev && !hasSingleInstanceLock) {
   app.quit();
 }
 
-app.on("second-instance", () => {
-  if (!mainWindow || mainWindow.isDestroyed()) {
-    createMainWindow();
-    return;
-  }
+if (!isDev) {
+  app.on("second-instance", () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      createMainWindow();
+      return;
+    }
 
-  mainWindow.show();
-  mainWindow.focus();
-});
+    mainWindow.show();
+    mainWindow.focus();
+  });
+}
 
 async function ensureShortcutsFile() {
   const filePath = shortcutsFilePath();
@@ -341,6 +351,16 @@ function createMainWindow() {
 }
 
 app.whenReady().then(() => {
+  ipcMain.handle("quickbind:getShortcuts", async () => {
+    try {
+      const shortcuts = await readShortcuts();
+      registerGlobalShortcuts(shortcuts);
+      return shortcuts;
+    } catch {
+      return [];
+    }
+  });
+
   ipcMain.handle("quickbind:saveShortcuts", async (_event, shortcuts) => {
     try {
       const saved = await writeShortcuts(shortcuts);
