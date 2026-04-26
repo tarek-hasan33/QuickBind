@@ -1,0 +1,26 @@
+{
+  "name": "projects",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run renderer:dev\" \"npm run electron:dev\"",
+    "renderer:dev": "npm --prefix renderer run dev -- --port 5173 --strictPort",
+    "electron:dev": "wait-on tcp:5173 && electron .",
+    "renderer:build": "npm run build --prefix renderer",
+    "build": "npm run renderer:build && electron-builder"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "electron": "^41.3.0",
+    "uiohook-napi": "^1.5.5"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron-builder": "^26.8.1",
+    "wait-on": "^9.0.3"
+  }
+}
