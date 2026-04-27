@@ -114,12 +114,14 @@ h1 {
 .icon-button {
   width: 2.4rem;
   height: 2.4rem;
+  padding: 0;
   display: inline-grid;
   place-items: center;
   border-radius: 999px;
   background: rgba(30, 41, 59, 0.95);
   color: #e2e8f0;
-  font-size: 1.4rem;
+  font-size: 1.1rem;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -310,6 +312,36 @@ h1 {
 
 .form-panel {
   margin: 0;
+}
+
+.settings-modal {
+  width: min(720px, 100%);
+}
+
+.settings-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.settings-item h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.settings-item p {
+  margin: 0.3rem 0 0;
+  color: #94a3b8;
 }
 
 .field-row {

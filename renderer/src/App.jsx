@@ -213,6 +213,7 @@ function getConflictWarning(accelerator) {
 function App() {
   const [shortcuts, setShortcuts] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showSystemShortcuts, setShowSystemShortcuts] = useState(false);
   const [systemSearch, setSystemSearch] = useState("");
   const [name, setName] = useState("");
@@ -220,6 +221,8 @@ function App() {
   const [recording, setRecording] = useState(false);
   const [actionType, setActionType] = useState(ACTION_OPEN_APP);
   const [actionValue, setActionValue] = useState("");
+  const [openAtLogin, setOpenAtLogin] = useState(false);
+  const [startupLoading, setStartupLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -234,6 +237,25 @@ function App() {
     };
 
     loadShortcuts();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadStartupSettings = async () => {
+      const settings = await window.quickBind?.getStartupSettings?.();
+      if (!mounted) {
+        return;
+      }
+
+      setOpenAtLogin(Boolean(settings?.openAtLogin));
+    };
+
+    loadStartupSettings();
 
     return () => {
       mounted = false;
@@ -356,6 +378,20 @@ function App() {
     setShowSystemShortcuts((value) => !value);
   };
 
+  const onToggleOpenAtLogin = async () => {
+    setStartupLoading(true);
+
+    try {
+      const updated = await window.quickBind?.setStartupSettings?.({
+        openAtLogin: !openAtLogin,
+      });
+
+      setOpenAtLogin(Boolean(updated?.openAtLogin));
+    } finally {
+      setStartupLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setName("");
     setAccelerator("");
@@ -420,12 +456,19 @@ function App() {
     <main className="app-shell">
       <header className="header-row">
         <div className="header-copy">
-          <p className="eyebrow">QuickBind</p>
-          <h1>QuickBind</h1>
+          <p className="eyebrow">QuickBind Beta</p>
+          <h1>QuickBind Beta</h1>
           <p className="subtitle">Keyboard shortcut manager for Windows</p>
         </div>
 
         <div className="header-actions">
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => setShowSettings(true)}
+          >
+            Settings
+          </button>
           <button
             type="button"
             className="ghost-button"
@@ -442,6 +485,64 @@ function App() {
           </button>
         </div>
       </header>
+
+      {showSettings && (
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowSettings(false);
+            }
+          }}
+        >
+          <section
+            className="modal-card settings-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="settings-title"
+          >
+            <div className="modal-header">
+              <div>
+                <p className="modal-eyebrow">Preferences</p>
+                <h2 id="settings-title">Settings</h2>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setShowSettings(false)}
+                aria-label="Close settings"
+              >
+                X
+              </button>
+            </div>
+
+            <div className="settings-grid">
+              <article className="settings-item">
+                <div>
+                  <h3>Start QuickBind at boot</h3>
+                  <p>
+                    Launch QuickBind when you sign in to Windows so shortcuts
+                    are ready immediately.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="toggle-button"
+                  onClick={onToggleOpenAtLogin}
+                  disabled={startupLoading}
+                >
+                  {startupLoading
+                    ? "Updating..."
+                    : openAtLogin
+                    ? "Enabled"
+                    : "Disabled"}
+                </button>
+              </article>
+            </div>
+          </section>
+        </div>
+      )}
 
       {showSystemShortcuts && (
         <div
@@ -470,7 +571,7 @@ function App() {
                 onClick={() => setShowSystemShortcuts(false)}
                 aria-label="Close system shortcuts"
               >
-                ×
+                X
               </button>
             </div>
 
@@ -544,7 +645,7 @@ function App() {
                 }}
                 aria-label="Close add shortcut form"
               >
-                ×
+                X
               </button>
             </div>
 

@@ -1,7 +1,7 @@
 {
-  "name": "projects",
+  "name": "quickbind",
   "version": "1.0.0",
-  "description": "",
+  "description": "QuickBind Beta global shortcut manager for Windows",
   "main": "main.js",
   "scripts": {
     "dev": "concurrently \"npm run renderer:dev\" \"npm run electron:dev\"",
@@ -9,10 +9,12 @@
     "electron:dev": "wait-on tcp:5173 && electron .",
     "renderer:build": "npm run build --prefix renderer",
     "build": "npm run renderer:build && electron-builder",
-    "dist": "npm run renderer:build && electron-builder --win nsis"
+    "dist": "npm run renderer:build && electron-builder --win nsis",
+    "prune:prod": "npm prune --production",
+    "dist:lean": "npm run renderer:build && npm prune --production --no-save && npm install --no-save rcedit && npx electron-builder --win nsis && npm install --no-save"
   },
   "keywords": [],
-  "author": "",
+  "author": "QuickBind Beta",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
@@ -22,31 +24,54 @@
     "concurrently": "^9.2.1",
     "electron": "^41.3.0",
     "electron-builder": "^26.8.1",
+    "rcedit": "^5.0.2",
     "wait-on": "^9.0.3"
   },
   "build": {
-    "productName": "QuickBind",
+    "appId": "com.quickbind.beta",
+    "productName": "QuickBind Beta",
+    "artifactName": "QuickBind-Beta-Setup-${version}.${ext}",
+    "afterPack": "scripts/after-pack.js",
+    "asar": true,
+    "compression": "maximum",
     "directories": {
       "output": "dist"
+    },
+    "extraMetadata": {
+      "main": "main.js"
     },
     "files": [
       "main.js",
       "preload.js",
       "mouse-watcher.js",
       "action-sender.js",
+      "assets/**/*",
       "renderer/dist/**/*",
-      "package.json"
+      "package.json",
+      "!renderer/src/**",
+      "!renderer/node_modules/**",
+      "!src/**",
+      "!**/*.map",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/.bin"
     ],
     "win": {
       "signAndEditExecutable": false,
+      "executableName": "QuickBindBeta",
+      "icon": "assets/icon.ico",
       "target": [
         "nsis"
       ]
     },
     "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "QuickBind"
+      "shortcutName": "QuickBind Beta"
     }
   }
 }

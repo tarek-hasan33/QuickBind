@@ -7,9 +7,19 @@ const {
   dialog,
   globalShortcut,
   ipcMain,
+  Menu,
+  Tray,
 } = require("electron");
 
 const isDev = !app.isPackaged;
+const APP_DISPLAY_NAME = "QuickBind Beta";
+const APP_USER_MODEL_ID = "com.quickbind.beta";
+const BACKGROUND_LAUNCH_ARG = "--background";
+const isBackgroundLaunch = process.argv.includes(BACKGROUND_LAUNCH_ARG);
+
+app.setName(APP_DISPLAY_NAME);
+app.setAppUserModelId(APP_USER_MODEL_ID);
+process.title = APP_DISPLAY_NAME;
 
 if (isDev) {
   // Keep dev runtime data separate from installed app data.
@@ -25,12 +35,15 @@ const ACTION_CUT = "cut";
 const ACTION_SELECT_ALL = "selectAll";
 const ACTION_SCREENSHOT = "screenshot";
 let mainWindow = null;
+let tray = null;
 let isQuitting = false;
 let currentShortcuts = [];
 let mouseWatcherProcess = null;
 const hasSingleInstanceLock = isDev ? true : app.requestSingleInstanceLock();
 const shortcutsFilePath = () =>
   path.join(app.getPath("userData"), "shortcuts.json");
+const appSettingsFilePath = () =>
+  path.join(app.getPath("userData"), "app-settings.json");
 
 if (!isDev && !hasSingleInstanceLock) {
   app.quit();
@@ -166,8 +179,12 @@ function startGlobalMouseWatcher() {
 
   const scriptPath = path.join(__dirname, "mouse-watcher.js");
 
-  mouseWatcherProcess = spawn("node", [scriptPath], {
+  mouseWatcherProcess = spawn(process.execPath, [scriptPath], {
     windowsHide: true,
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: "1",
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
 
@@ -267,10 +284,14 @@ function sendKeys(keys) {
 
 function sendShortcutKeys(actionType) {
   const child = spawn(
-    "node",
+    process.execPath,
     [path.join(__dirname, "action-sender.js"), actionType],
     {
       detached: true,
+      env: {
+        ...process.env,
+        ELECTRON_RUN_AS_NODE: "1",
+      },
       stdio: "ignore",
       windowsHide: true,
     }
@@ -312,18 +333,101 @@ function registerGlobalShortcuts(shortcuts) {
   }
 }
 
+function getIconPath() {
+  return path.join(__dirname, "assets", "icon.ico");
+}
+
+async function readAppSettings() {
+  try {
+    const raw = await fs.readFile(appSettingsFilePath(), "utf8");
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") {
+      return parsed;
+    }
+  } catch {
+    // ignore missing/invalid settings file and use defaults
+  }
+
+  return {};
+}
+
+async function writeAppSettings(settings) {
+  const safeSettings = settings && typeof settings === "object" ? settings : {};
+  await fs.writeFile(
+    appSettingsFilePath(),
+    JSON.stringify(safeSettings, null, 2),
+    "utf8"
+  );
+}
+
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createMainWindow();
+    return;
+  }
+
+  mainWindow.setSkipTaskbar(false);
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+function hideToTray() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  mainWindow.hide();
+  mainWindow.setSkipTaskbar(true);
+}
+
+function createTray() {
+  if (tray) {
+    return;
+  }
+
+  tray = new Tray(getIconPath());
+  tray.setToolTip(APP_DISPLAY_NAME);
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "Open App",
+      click: () => {
+        showMainWindow();
+      },
+    },
+    {
+      type: "separator",
+    },
+    {
+      label: "Quit",
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setContextMenu(contextMenu);
+  tray.on("double-click", () => {
+    showMainWindow();
+  });
+}
+
 function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1240,
     height: 820,
     minWidth: 900,
     minHeight: 640,
-    title: "QuickBind",
+    title: APP_DISPLAY_NAME,
+    icon: getIconPath(),
+    show: !(isBackgroundLaunch && !isDev),
     backgroundColor: "#f2efe9",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
     },
   });
 
@@ -334,12 +438,25 @@ function createMainWindow() {
     }
 
     event.preventDefault();
-    mainWindow.hide();
+    hideToTray();
+  });
+
+  mainWindow.on("minimize", (event) => {
+    if (isQuitting) {
+      return;
+    }
+
+    event.preventDefault();
+    hideToTray();
   });
 
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
+
+  if (isBackgroundLaunch && !isDev) {
+    mainWindow.setSkipTaskbar(true);
+  }
 
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173");
@@ -350,7 +467,47 @@ function createMainWindow() {
   mainWindow.loadFile(path.join(__dirname, "renderer", "dist", "index.html"));
 }
 
-app.whenReady().then(() => {
+function getStartupSettings() {
+  const loginSettings = app.getLoginItemSettings({
+    path: process.execPath,
+    args: [BACKGROUND_LAUNCH_ARG],
+  });
+  return {
+    openAtLogin: Boolean(loginSettings.openAtLogin),
+  };
+}
+
+function setStartupSettings(openAtLogin) {
+  const shouldOpenAtLogin = Boolean(openAtLogin);
+
+  app.setLoginItemSettings({
+    openAtLogin: shouldOpenAtLogin,
+    openAsHidden: true,
+    path: process.execPath,
+    args: [BACKGROUND_LAUNCH_ARG],
+  });
+
+  return getStartupSettings();
+}
+
+async function ensureBackgroundShortcutsStartupOnFirstRun() {
+  if (isDev) {
+    return;
+  }
+
+  const settings = await readAppSettings();
+  if (settings.startupConfigured) {
+    return;
+  }
+
+  setStartupSettings(true);
+  await writeAppSettings({
+    ...settings,
+    startupConfigured: true,
+  });
+}
+
+app.whenReady().then(async () => {
   ipcMain.handle("quickbind:getShortcuts", async () => {
     try {
       const shortcuts = await readShortcuts();
@@ -395,6 +552,16 @@ app.whenReady().then(() => {
     return result.filePaths[0];
   });
 
+  ipcMain.handle("quickbind:getStartupSettings", () => {
+    return getStartupSettings();
+  });
+
+  ipcMain.handle("quickbind:setStartupSettings", (_event, settings) => {
+    return setStartupSettings(settings?.openAtLogin);
+  });
+
+  await ensureBackgroundShortcutsStartupOnFirstRun();
+
   readShortcuts()
     .then((shortcuts) => {
       registerGlobalShortcuts(shortcuts);
@@ -405,16 +572,11 @@ app.whenReady().then(() => {
 
   startGlobalMouseWatcher();
 
+  createTray();
   createMainWindow();
 
   app.on("activate", () => {
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      createMainWindow();
-      return;
-    }
-
-    mainWindow.show();
-    mainWindow.focus();
+    showMainWindow();
   });
 });
 
@@ -428,6 +590,11 @@ app.on("before-quit", () => {
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
 
   if (mouseWatcherProcess && !mouseWatcherProcess.killed) {
     try {

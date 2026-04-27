@@ -16,6 +16,12 @@ node_modules/
 dist/
 out/
 build/
+renderer/dist/
+node_modules/
+renderer/node_modules/
+*.blockmap
+latest.yml
+builder-debug.yml
 
 # Editor directories and files
 .vscode/*
