@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="QuickBind Beta icon">
-	<rect width="64" height="64" rx="14" fill="#0f172a" />
-	<rect x="4" y="4" width="56" height="56" rx="10" fill="none" stroke="#14b8a6" stroke-width="3" />
-	<path d="M22 19l-6 12h8l-4 14 14-18h-8l4-8z" fill="#22c55e" />
-	<text x="33" y="50" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="700" fill="#e2e8f0">BETA</text>
-</svg>

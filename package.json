@@ -1,77 +1,43 @@
 {
-  "name": "quickbind",
-  "version": "1.0.0",
-  "description": "QuickBind Beta global shortcut manager for Windows",
-  "main": "main.js",
+  "name": "tauri-app",
+  "private": true,
+  "version": "1.1.0",
+  "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run renderer:dev\" \"npm run electron:dev\"",
-    "renderer:dev": "npm --prefix renderer run dev -- --port 5173 --strictPort",
-    "electron:dev": "wait-on tcp:5173 && electron .",
-    "renderer:build": "npm run build --prefix renderer",
-    "build": "npm run renderer:build && electron-builder",
-    "dist": "npm run renderer:build && electron-builder --win nsis",
-    "prune:prod": "npm prune --production",
-    "dist:lean": "npm run renderer:build && npm prune --production --no-save && npm install --no-save rcedit && npx electron-builder --win nsis && npm install --no-save"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
   },
-  "keywords": [],
-  "author": "QuickBind Beta",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "uiohook-napi": "^1.5.5"
+    "@fontsource/geist": "^5.2.8",
+    "@fontsource/geist-mono": "^5.2.7",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-switch": "^1.2.6",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-autostart": "^2.5.1",
+    "@tauri-apps/plugin-global-shortcut": "^2.3.1",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-store": "^2.4.3",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.14.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss-animate": "^1.0.7",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1",
-    "electron": "^41.3.0",
-    "electron-builder": "^26.8.1",
-    "rcedit": "^5.0.2",
-    "wait-on": "^9.0.3"
-  },
-  "build": {
-    "appId": "com.quickbind.beta",
-    "productName": "QuickBind Beta",
-    "artifactName": "QuickBind-Beta-Setup-${version}.${ext}",
-    "afterPack": "scripts/after-pack.js",
-    "asar": true,
-    "compression": "maximum",
-    "directories": {
-      "output": "dist"
-    },
-    "extraMetadata": {
-      "main": "main.js"
-    },
-    "files": [
-      "main.js",
-      "preload.js",
-      "mouse-watcher.js",
-      "action-sender.js",
-      "assets/**/*",
-      "renderer/dist/**/*",
-      "package.json",
-      "!renderer/src/**",
-      "!renderer/node_modules/**",
-      "!src/**",
-      "!**/*.map",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
-      "!**/node_modules/.bin"
-    ],
-    "win": {
-      "signAndEditExecutable": false,
-      "executableName": "QuickBindBeta",
-      "icon": "assets/icon.ico",
-      "target": [
-        "nsis"
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "QuickBind Beta"
-    }
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.13",
+    "tailwindcss": "^3.4.19",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4"
   }
 }

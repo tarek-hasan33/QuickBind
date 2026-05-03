@@ -12,17 +12,6 @@ dist
 dist-ssr
 *.local
 
-node_modules/
-dist/
-out/
-build/
-renderer/dist/
-node_modules/
-renderer/node_modules/
-*.blockmap
-latest.yml
-builder-debug.yml
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -33,3 +22,18 @@ builder-debug.yml
 *.njsproj
 *.sln
 *.sw?
+
+# Rust / Tauri (CRITICAL - this is 5GB+ of build cache)
+src-tauri/target/
+
+# Tauri generated schemas
+src-tauri/gen/
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Environment variables
+.env
+.env.local
+.env.production

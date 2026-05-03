@@ -1,0 +1,55 @@
+@import "@fontsource/geist/400.css";
+@import "@fontsource/geist/500.css";
+@import "@fontsource/geist/600.css";
+@import "@fontsource/geist-mono/400.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg-base: #f7f7f8;
+  --color-bg-surface: #ffffff;
+  --color-bg-subtle: #f0f0f2;
+  --color-bg-hover: #eaeaec;
+  --color-border: #e2e2e6;
+  --color-border-strong: #c8c8ce;
+  --color-text-primary: #111114;
+  --color-text-secondary: #5c5c6e;
+  --color-text-tertiary: #9898a8;
+  --color-accent: #5b6cf9;
+  --color-accent-hover: #4a5ce8;
+  --color-accent-subtle: #eef0fe;
+  --color-accent-border: #c7cbfc;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --shadow-focus: 0 0 0 3px rgba(91, 108, 249, 0.2);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  font-family: "Geist", sans-serif;
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: "Geist Mono", monospace;
+}
